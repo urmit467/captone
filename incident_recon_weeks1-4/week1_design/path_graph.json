@@ -1,0 +1,17 @@
+{
+  "description": "MVP path network. Nodes are PATHS (corridors/segments); edges are allowed movement (directed). P4 has no camera.",
+  "hidden_path": "P4",
+  "paths": {
+    "P1": {"length_m": 120, "camera": "C1"},
+    "P2": {"length_m": 150, "camera": "C2"},
+    "P3": {"length_m": 200, "camera": "C3"},
+    "P4": {"length_m": 300, "camera": null},
+    "P5": {"length_m": 180, "camera": "C5"},
+    "P6": {"length_m": 160, "camera": "C6"},
+    "P7": {"length_m": 140, "camera": "C7"}
+  },
+  "edges": [["P1","P2"],["P2","P3"],["P3","P4"],["P3","P5"],["P4","P5"],["P4","P6"],["P4","P7"],["P5","P6"],["P6","P7"]],
+  "entries": ["P1", "P2", "P3"],
+  "walking_speed_bounds_mps": [0.4, 2.5],
+  "time_slack_s": 15
+}

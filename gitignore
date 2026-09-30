@@ -1,0 +1,44 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Archives
+*.zip
+
+# Week 3: videos and tracking output
+*.mp4
+*.avi
+*.mov
+*.mkv
+week3_detection_tracking/output/
+
+# Week 4: embeddings, timelines, model weights
+week4_reid/track_embeddings.npz
+week4_reid/global_timeline.csv
+*.pth
+*.pt
+*.onnx
+
+# Week 5: databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker / Postgres data
+pgdata/
+postgres_data/
+
+# Env and secrets
+.env
+.env.*
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

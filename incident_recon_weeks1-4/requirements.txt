@@ -1,0 +1,12 @@
+numpy
+pandas
+scipy
+scikit-learn
+matplotlib
+networkx
+pyyaml
+opencv-python
+ultralytics      # YOLO + ByteTrack/BoT-SORT (installs PyTorch)
+lap              # tracker dependency
+torchreid        # OSNet Re-ID (optional; the colour-histogram backend needs no torch)
+# Week 5+ : psycopg2-binary, sqlalchemy
