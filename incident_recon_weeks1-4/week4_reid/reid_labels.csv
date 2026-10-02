@@ -1,0 +1,13 @@
+camera_id,track_id,person_id
+C1,1,Person_002
+C1,3,Person_003
+C1,4,Person_004
+C2,2,Person_005
+C3,1,Person_006
+C3,2,Person_007
+C5,1,Person_008
+C5,2,Person_009
+C6,1,Person_010
+C6,2,Person_011
+C7,1,Person_012
+C7,2,Person_013

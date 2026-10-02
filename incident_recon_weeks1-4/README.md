@@ -14,7 +14,7 @@ incident_recon_weeks1-4/
 python -m venv .venv && source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt   # for GPU install PyTorch first from pytorch.org (CUDA build), then the rest
 pip install gdown                 # needed by torchreid
-cd week1_design && docker compose up -d && psql postgresql://recon:recon@localhost:5432/recon -f schema.sql   # optional until Week 5
+# PostgreSQL is installed directly on your computer (no Docker) - see the Week 5 package for the working schema and setup
 python draw_graph.py
 ```
 
@@ -27,7 +27,7 @@ python draw_graph.py
 ## What was tested here, and what was not
 | Part | Status |
 |---|---|
-| Week 1 SQL schema | parsed OK as PostgreSQL; **not** executed against a live database (no Docker here) |
+| Week 1 SQL schema | parsed OK as PostgreSQL; the working version of the schema is in the Week 5 package, where it was run on a real PostgreSQL 16 server |
 | Week 1 graph diagram | generated and checked |
 | Week 2 simulator | run; 3000 people, 300 incidents, statistics checked |
 | Week 3 YOLO + ByteTrack + BoT-SORT | run on CPU with the real yolo11n weights on a **synthetic moving-image video** (people from a sample photo), producing CSVs, annotated video and crops. **Not** tested on real camera footage or GPU |

@@ -1,5 +1,7 @@
 -- PostgreSQL schema for the incident-time person reconstruction prototype.
 -- Persons are anonymised (Person_001 ...). No faces or names are stored.
+-- DESIGN version. The working schema (times as seconds, plus SQL functions) is sql/01_schema.sql in the Week 5 package.
+-- Install PostgreSQL directly on your computer; no Docker is used.
 
 CREATE TABLE persons (
     id            SERIAL PRIMARY KEY,

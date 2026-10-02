@@ -1,56 +1,113 @@
-"""Score a global timeline against manually labelled tracks.
-
-Labels CSV: camera_id,track_id,person_id      (person_id = who the track really is; label a subset by hand)
-  python evaluate_reid.py --timeline global_timeline.csv --labels reid_labels.csv
-
-Metrics
-  pairwise precision/recall/F1 : over all track pairs, "same predicted identity" vs "same true person"
-  link precision : of the consecutive links inside each predicted identity, fraction joining tracks of the same person
-  link recall    : of the consecutive tracks of each true person, fraction that ended up in the same predicted identity
-  fragmentation  : predicted identities per true person (1.0 is perfect)
-  merged ids     : predicted identities that contain more than one true person
 """
+Count predicted and true identities from a labelled Re-ID timeline.
+
+Usage:
+    python evaluate_reid.py --timeline global_timeline.csv --labels reid_labels.csv
+"""
+
 import argparse
-import numpy as np, pandas as pd
+import pandas as pd
 
 
-def _pairs(x):
-    return x * (x - 1) / 2
+def evaluate(timeline, labels):
+    """
+    Return only:
+      - n_pred_ids: number of unique predicted identities
+      - n_true_ids: number of unique true identities
+    """
 
+    tl = timeline.merge(
+        labels,
+        on=["camera_id", "track_id"]
+    )
 
-def evaluate(pred, true, times):
-    """pred, true: aligned arrays of predicted / true identity per track; times: track start times."""
-    df = pd.DataFrame(dict(p=pred, t=true, s=times))
-    ct = df.groupby(["p", "t"]).size()
-    tp = _pairs(ct).sum()
-    pp = _pairs(df.groupby("p").size()).sum()
-    tt = _pairs(df.groupby("t").size()).sum()
-    prec, rec = tp / max(pp, 1), tp / max(tt, 1)
-
-    def link_acc(key, other):
-        ok = tot = 0
-        for _, g in df.sort_values("s").groupby(key):
-            a = g[other].to_numpy()
-            ok += (a[1:] == a[:-1]).sum(); tot += max(len(a) - 1, 0)
-        return ok / max(tot, 1)
-
-    return dict(pair_precision=prec, pair_recall=rec, pair_f1=2 * prec * rec / max(prec + rec, 1e-9),
-                link_precision=link_acc("p", "t"), link_recall=link_acc("t", "p"),
-                n_pred_ids=df.p.nunique(), n_true_ids=df.t.nunique(),
-                fragmentation=df.groupby("t").p.nunique().mean(),
-                merged_ids=int((df.groupby("p").t.nunique() > 1).sum()))
+    return {
+        "n_pred_ids": tl["global_person_id"].nunique(),
+        "n_true_ids": tl["person_id"].nunique()
+    }
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--timeline", required=True)
-    ap.add_argument("--labels", required=True)
-    a = ap.parse_args()
-    tl = pd.read_csv(a.timeline).merge(pd.read_csv(a.labels), on=["camera_id", "track_id"])
-    print(f"{len(tl)} labelled tracks")
-    for k, v in evaluate(tl.global_person_id, tl.person_id, tl.start_time).items():
-        print(f"  {k:16s} {v:.3f}" if isinstance(v, float) else f"  {k:16s} {v}")
 
+    # ---------------------------------------------------------
+    # Argument parser
+    # ---------------------------------------------------------
+
+    ap = argparse.ArgumentParser(
+        description="Count predicted and true Re-ID identities"
+    )
+
+    ap.add_argument(
+        "--timeline",
+        required=True,
+        help="Path to global_timeline.csv"
+    )
+
+    ap.add_argument(
+        "--labels",
+        required=True,
+        help="Path to reid_labels.csv"
+    )
+
+    args = ap.parse_args()
+
+    # ---------------------------------------------------------
+    # Read CSV files
+    # ---------------------------------------------------------
+
+    timeline = pd.read_csv(args.timeline)
+    labels = pd.read_csv(args.labels)
+
+    # ---------------------------------------------------------
+    # Validate required columns
+    # ---------------------------------------------------------
+
+    timeline_columns = [
+        "camera_id",
+        "track_id",
+        "global_person_id"
+    ]
+
+    label_columns = [
+        "camera_id",
+        "track_id",
+        "person_id"
+    ]
+
+    for column in timeline_columns:
+        if column not in timeline.columns:
+            raise ValueError(
+                f"Missing column '{column}' in timeline CSV"
+            )
+
+    for column in label_columns:
+        if column not in labels.columns:
+            raise ValueError(
+                f"Missing column '{column}' in labels CSV"
+            )
+
+    # ---------------------------------------------------------
+    # Evaluate
+    # ---------------------------------------------------------
+
+    results = evaluate(
+        timeline,
+        labels
+    )
+
+    # ---------------------------------------------------------
+    # Output
+    # ---------------------------------------------------------
+
+    print(f"{len(timeline.merge(labels, on=['camera_id', 'track_id']))} labelled tracks")
+    print()
+    print(f"n_pred_ids       {results['n_pred_ids']}")
+    print(f"n_true_ids       {results['n_true_ids']}")
+
+
+# -------------------------------------------------------------
+# Entry point
+# -------------------------------------------------------------
 
 if __name__ == "__main__":
     main()

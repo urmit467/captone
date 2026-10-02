@@ -58,7 +58,7 @@ and stored ONLY in `ground_truth_presence`. Inference code must never read that 
 
 ## 9. Deliverables for Week 1
 - [x] Path graph diagram + JSON
-- [x] PostgreSQL schema + docker-compose
+- [x] PostgreSQL schema (working version with SQL functions: Week 5 package)
 - [x] Problem definition and metrics (this file)
 - [x] Recording plan and consent template
 - [ ] Environment set up on your machine (see README "Setup")

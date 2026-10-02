@@ -1,4 +1,4 @@
-
+"""Draws the path network -> path_graph.png (hidden path in red/dashed, cameras labelled)."""
 import json, os
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt, networkx as nx

@@ -1,0 +1,9 @@
+{
+ "preset": "hard",
+ "p_detect": 0.35,
+ "obs_period": 10.0,
+ "jitter": 2.0,
+ "n_persons": 1200,
+ "window_s": 900.0,
+ "seed": 42
+}
