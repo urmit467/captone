@@ -1,9 +1,3 @@
-"""Path network management backed by NetworkX and MongoDB.
-
-Represents the connected path network as an undirected graph: nodes are paths
-and edges are connections between them. Each path stores its length, average
-walking speed, observability and assigned cameras.
-"""
 
 from __future__ import annotations
 

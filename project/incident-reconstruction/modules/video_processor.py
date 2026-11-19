@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Callable, Optional
 
 import cv2
@@ -57,11 +57,17 @@ class VideoProcessor:
         max_frames: Optional[int] = None,
         output_path: Optional[str] = None,
         progress_callback: Optional[Callable[[int, int], None]] = None,
+        dedup_window_seconds: float = 2.0,
     ) -> dict:
         """Process a video and store observations.
 
         ``progress_callback(current_frame, total_frames)`` may be provided by
         the dashboard to show a progress bar.
+
+        ``dedup_window_seconds`` prevents the same tracking ID on the same
+        camera from being saved as a new observation more than once within the
+        given window (YOLO/ByteTrack can re-detect a standing person on
+        consecutive processed frames).
         """
         start_time = start_time or utc_now()
         cap = cv2.VideoCapture(video_path)
@@ -71,28 +77,38 @@ class VideoProcessor:
         fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
 
+        # Last observation timestamp per (camera_id, tracking_id) so a person
+        # standing still isn't saved as a new observation every processed frame.
+        last_seen: dict[tuple[str, int], datetime] = {}
+
         writer = None
         if output_path:
-            # Prefer H.264/avc1 (browser-playable) with FMP4 fallback,
-            # since OpenCV's default mp4v/FMP4 isn't decodable by browsers.
-            writer = None
-            for fourcc_name in ("avc1", "mp4v"):
+            # Ensure the output directory exists (common failure cause on Windows).
+            out_dir = os.path.dirname(output_path)
+            if out_dir:
+                os.makedirs(out_dir, exist_ok=True)
+
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            tried = []
+            for fourcc_name in ("avc1", "mp4v", "XVID", "MJPG"):
                 try:
                     fourcc = cv2.VideoWriter_fourcc(*fourcc_name)
-                    trial = cv2.VideoWriter(
-                        output_path, fourcc, fps,
-                        (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                         int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))),
-                    )
+                    trial = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
                     if trial.isOpened():
                         writer = trial
                         logger.info("VideoWriter using codec %s", fourcc_name)
                         break
+                    tried.append(fourcc_name)
                     trial.release()
-                except Exception:
-                    continue
+                except Exception as exc:  # pragma: no cover - backend dependent
+                    tried.append(f"{fourcc_name} ({exc})")
             if writer is None:
-                raise RuntimeError("Could not open VideoWriter with any codec")
+                logger.warning(
+                    "Could not open VideoWriter with any of %s; continuing without "
+                    "writing processed video. Observations will still be saved.",
+                    tried,
+                )
 
         observations: list[dict] = []
         frame_idx = 0
@@ -154,6 +170,18 @@ class VideoProcessor:
                         except Exception as exc:  # pragma: no cover - db write
                             logger.warning("Failed to register person: %s", exc)
                             person_id = None
+
+                    # De-duplicate: a standing person can be re-detected on the
+                    # same camera/tracking ID within consecutive processed
+                    # frames. Skip if we already saved an observation for this
+                    # tracking ID within the dedup window.
+                    tid = int(det["tracking_id"])
+                    dedup_key = (camera_id, tid)
+                    now = timestamp
+                    prev = last_seen.get(dedup_key)
+                    if prev is not None and (now - prev).total_seconds() < dedup_window_seconds:
+                        continue
+                    last_seen[dedup_key] = now
 
                     observations.append(
                         {
